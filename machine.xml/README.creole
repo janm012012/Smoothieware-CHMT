@@ -1,0 +1,3 @@
+This directory contains machine.xml files to start with. It was last opend with the testing version of OpenPnP.
+
+To use any, copy it into the .openpnp2 folder and rename it to machine.xml.

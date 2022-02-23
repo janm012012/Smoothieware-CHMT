@@ -225,11 +225,21 @@ switch.blow.output_pin                       4.6!
 switch.blow.output_type                      hwpwm
 switch.blow.pwm_period_ms                    0.0625 # 16kHz (value from stock firmware)
 
+# work light on the gantry
+switch.ledwork.enable                        true
+switch.ledwork.input_on_command              M814
+switch.ledwork.input_off_command             M815
+switch.ledwork.output_pin                    6.4
+switch.ledwork.output_type                   pwm
+
+# light on the camera
 switch.leddown.enable                        true
-switch.leddown.input_on_command              M814
-switch.leddown.input_off_command             M815
-switch.leddown.output_pin                    6.4
-switch.leddown.output_type                   pwm
+switch.leddown.input_on_command              M822
+switch.leddown.input_off_command             M823
+switch.leddown.output_pin                    3.15 # OT2
+switch.leddown.output_type                   digital
+switch.leddown.output_type                   hwpwm
+switch.leddown.pwm_period_ms                 0.0625 # 16kHz
 
 switch.dragpin.enable                        true
 switch.dragpin.input_on_command              M816

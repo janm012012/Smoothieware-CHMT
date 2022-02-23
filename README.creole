@@ -9,6 +9,7 @@ This version contains a few modifications with respect to the original code by M
 * buzzer configured (on: M820, off: M821)
 * default build changed to PAXIS=7
 * planner queue increased to 128
+* lighting for down-looking camera added (via OT2, 16kHz pwm, M822 S<percent>)
 
 Current build status: {{https://travis-ci.org/Smoothieware/Smoothieware.svg?branch=edge}}
 

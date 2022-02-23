@@ -208,7 +208,7 @@ void Robot::load_config()
     this->s_value             = THEKERNEL->config->value(laser_module_default_power_checksum)->by_default(0.8F)->as_number();
 
      // Make our Primary XYZ StepperMotors, and potentially A B C
-    uint16_t const motor_checksums[][6] = {
+    uint16_t const motor_checksums[][7] = {
         ACTUATOR_CHECKSUMS("alpha"), // X
         ACTUATOR_CHECKSUMS("beta"),  // Y
         ACTUATOR_CHECKSUMS("gamma"), // Z
@@ -217,7 +217,10 @@ void Robot::load_config()
         #if MAX_ROBOT_ACTUATORS > 4
         ACTUATOR_CHECKSUMS("epsilon"), // B
         #if MAX_ROBOT_ACTUATORS > 5
-        ACTUATOR_CHECKSUMS("zeta")     // C
+        ACTUATOR_CHECKSUMS("zeta"),    // C
+        #if MAX_ROBOT_ACTUATORS > 6
+        ACTUATOR_CHECKSUMS("eta"),     // E
+        #endif
         #endif
         #endif
         #endif

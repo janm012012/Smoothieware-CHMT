@@ -64,7 +64,7 @@ void Switch::on_halt(void *arg)
         switch(this->output_type) {
             case DIGITAL: this->digital_pin->set(this->failsafe); break;
             case SIGMADELTA: this->sigmadelta_pin->set(this->failsafe); break;
-            case HWPWM: this->pwm_pin->write(0); break;
+            case HWPWM: this->pwm_write(0); break;
             case NONE: break;
         }
         this->switch_state= this->failsafe;
@@ -139,6 +139,7 @@ void Switch::on_config_reload(void *argument)
         Pin *pin= new Pin();
         pin->from_string(THEKERNEL->config->value(switch_checksum, this->name_checksum, output_pin_checksum )->by_default("nc")->as_string())->as_output();
         this->pwm_pin= pin->hardware_pwm();
+        this->inverting = pin->is_inverting();  // remember interting state to handle pwm inversion, which could also be done in hardware
         if(failsafe == 1) {
             set_high_on_debug(pin->port_number, pin->pin);
         }else{
@@ -171,9 +172,9 @@ void Switch::on_config_reload(void *argument)
         // default is 0% duty cycle
         this->switch_value = THEKERNEL->config->value(switch_checksum, this->name_checksum, startup_value_checksum )->by_default(0)->as_number();
         if(this->switch_state) {
-            this->pwm_pin->write(this->switch_value/100.0F);
+            this->pwm_write(this->switch_value/100.0F);
         } else {
-            this->pwm_pin->write(0);
+            this->pwm_write(0);
         }
 
     } else if(this->output_type == DIGITAL){
@@ -274,10 +275,10 @@ void Switch::on_gcode_received(void *argument)
                 float v = gcode->get_value('S');
                 if(v > 100) v= 100;
                 else if(v < 0) v= 0;
-                this->pwm_pin->write(v/100.0F);
+                this->pwm_write(v/100.0F);
                 this->switch_state= (v != 0);
             } else {
-                this->pwm_pin->write(this->switch_value);
+                this->pwm_write(this->switch_value);
                 this->switch_state= (this->switch_value != 0);
             }
 
@@ -298,7 +299,7 @@ void Switch::on_gcode_received(void *argument)
             this->sigmadelta_pin->set(false);
 
         } else if (this->output_type == HWPWM) {
-            this->pwm_pin->write(0);
+            this->pwm_write(0);
 
         } else if (this->output_type == DIGITAL) {
             // logic pin turn off
@@ -361,7 +362,7 @@ void Switch::on_main_loop(void *argument)
                 this->sigmadelta_pin->pwm(this->switch_value); // this requires the value has been set otherwise it switches on to whatever it last was
 
             } else if (this->output_type == HWPWM) {
-                this->pwm_pin->write(this->switch_value/100.0F);
+                this->pwm_write(this->switch_value/100.0F);
 
             } else if (this->output_type == DIGITAL) {
                 this->digital_pin->set(true);
@@ -375,7 +376,7 @@ void Switch::on_main_loop(void *argument)
                 this->sigmadelta_pin->set(false);
 
             } else if (this->output_type == HWPWM) {
-                this->pwm_pin->write(0);
+                this->pwm_write(0);
 
             } else if (this->output_type == DIGITAL) {
                 this->digital_pin->set(false);
@@ -432,3 +433,14 @@ void Switch::send_gcode(std::string msg, StreamOutput *stream)
     THEKERNEL->call_event(ON_CONSOLE_LINE_RECEIVED, &message );
 }
 
+// set new period for hardware pwm respecting the inverting setting
+void Switch::pwm_write(float v)
+{
+    // invert pwm drive value, this could also be done in hardware, but is
+    // not supported. To add support, the pwm init function has to receive
+    // the inverting flag and remember it for future writes.
+    if (this->inverting)
+        v = 1.0F - v;
+
+    this->pwm_pin->write(v);
+}

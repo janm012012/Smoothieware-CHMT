@@ -24,7 +24,7 @@
 
 #ifndef N_PRIMARY_AXIS
     // This may chnage and include ABC
-    #define N_PRIMARY_AXIS 3
+    #define N_PRIMARY_AXIS 7
 #endif
 
 #if N_PRIMARY_AXIS < 3 || N_PRIMARY_AXIS > MAX_ROBOT_ACTUATORS

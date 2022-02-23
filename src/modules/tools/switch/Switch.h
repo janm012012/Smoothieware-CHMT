@@ -42,6 +42,7 @@ class Switch : public Module {
         void send_gcode(std::string msg, StreamOutput* stream);
         bool match_input_on_gcode(const Gcode* gcode) const;
         bool match_input_off_gcode(const Gcode* gcode) const;
+        void pwm_write(float v);
 
         Pin       input_pin;
         float     switch_value;
@@ -66,6 +67,7 @@ class Switch : public Module {
             bool      switch_state:1;
             bool      ignore_on_halt:1;
             uint8_t   failsafe:1;
+            bool      inverting:1;
         };
 };
 

@@ -15,12 +15,14 @@ default_feed_rate                            60000            # Default rate ( m
 default_seek_rate                            60000            # Default rate ( mm/minute ) for G0 moves
 
 # Arm solution configuration : Cartesian robot. Translates mm positions into stepper positions
-alpha_steps_per_mm                           31.94            # Steps per mm for alpha stepper # 1/8 stepping, 25T?, 1.8deg
+alpha_steps_per_mm                           31.94            # Steps per mm for alpha stepper # 1/8 stepping, 25T?, 1.8deg # this value can be fine tuned using M92 in ENABLE_COMMAND
 beta_steps_per_mm                            31.94            # Steps per mm for beta stepper
 gamma_steps_per_mm                           4.4444           # Steps per mm for gamma stepper
 
 # Planner module configuration : Look-ahead and acceleration configuration
-planner_queue_size                           48               # DO NOT CHANGE THIS UNLESS YOU KNOW EXACTLY WHAT YOU ARE DOING
+planner_queue_size                           128              # according to Arthur this value can be increased until the controller runs out of memory
+                                                              # At present each element requires 92byte ABH0 and 400byte heap. AHB0 is the limiting factor
+                                                              # but could be shifted if stack or others would be shifted to CCM
 acceleration                                 10000            # Acceleration in mm/second/second.
 z_acceleration                               8000             # Acceleration for Z only moves in mm/s^2, 0 uses acceleration which is the default. DO NOT SET ON A DELTA
 acceleration_ticks_per_second                1000             # Number of times per second the speed is updated
@@ -175,8 +177,8 @@ soft_endstop.x_min                           -1
 soft_endstop.x_max                           511
 soft_endstop.y_min                           -1
 soft_endstop.y_max                           461
-soft_endstop.z_min                           -46.1
-soft_endstop.z_max                           46.1
+soft_endstop.z_min                           -60.0            # limit raised to handle shift after home
+soft_endstop.z_max                           60.0             # limit raised to handle shift after home
 soft_endstop.halt                            false
 
 switch.n1_vac.enable                         true
@@ -207,7 +209,8 @@ switch.vac.enable                            true
 switch.vac.input_on_command                  M808
 switch.vac.input_off_command                 M809
 switch.vac.output_pin                        4.5!
-switch.vac.output_type                       digital
+switch.vac.output_type                       hwpwm
+switch.vac.pwm_period_ms                     0.0625 # 16kHz
 
 switch.ledup.enable                          true
 switch.ledup.input_on_command                M810
@@ -219,7 +222,8 @@ switch.blow.enable                           true
 switch.blow.input_on_command                 M812
 switch.blow.input_off_command                M813
 switch.blow.output_pin                       4.6!
-switch.blow.output_type                      digital
+switch.blow.output_type                      hwpwm
+switch.blow.pwm_period_ms                    0.0625 # 16kHz (value from stock firmware)
 
 switch.leddown.enable                        true
 switch.leddown.input_on_command              M814
@@ -231,7 +235,14 @@ switch.dragpin.enable                        true
 switch.dragpin.input_on_command              M816
 switch.dragpin.input_off_command             M817
 switch.dragpin.output_pin                    3.14
-switch.dragpin.output_type                   digital
+switch.dragpin.output_type                   hwpwm
+switch.dragpin.pwm_period_ms                 0.0625 # 16kHz
+
+switch.buzzer.enable                         true
+switch.buzzer.input_on_command               M820
+switch.buzzer.input_off_command              M821
+switch.buzzer.output_pin                     1.7
+switch.buzzer.output_type                    digital
 
 #switch.rs422en.enable                        true
 #switch.rs422en.output_pin                    2.1

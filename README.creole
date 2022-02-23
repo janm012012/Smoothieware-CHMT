@@ -1,3 +1,15 @@
+==Notes
+
+This version contains a few modifications with respect to the original code by Matt
+* c-riegel's mods to support advanced motion in OpenPnp
+* c-riegel's tweaked feed rate and acceleration limits
+* increased z limits to allow the z axis to move to its physical limits
+* vacuum and blower configuration changed to 16kHz pwm (M808/M810 S<percent>)
+* drap bin configuration changed to 16kHz pwm (M816 S<percent>)
+* buzzer configured (on: M820, off: M821)
+* default build changed to PAXIS=7
+* planner queue increased to 128
+
 Current build status: {{https://travis-ci.org/Smoothieware/Smoothieware.svg?branch=edge}}
 
 ==STM32/CHMT Notes

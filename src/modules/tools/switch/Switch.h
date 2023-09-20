@@ -14,6 +14,11 @@
 
 #include <string>
 
+
+//#define WAIT_FOR_QUEUEU
+#define WAIT_FOR_DRAG_PIN_UP
+
+
 class Gcode;
 class StreamOutput;
 
@@ -60,6 +65,9 @@ class Switch : public Module {
         uint16_t  input_off_command_code;
         char      input_on_command_letter;
         char      input_off_command_letter;
+#ifdef WAIT_FOR_DRAG_PIN_UP                    
+        Pin dragpin;
+#endif        
         struct {
             uint8_t   subcode:4;
             bool      switch_changed:1;
@@ -68,6 +76,9 @@ class Switch : public Module {
             bool      ignore_on_halt:1;
             uint8_t   failsafe:1;
             bool      inverting:1;
+#ifdef WAIT_FOR_DRAG_PIN_UP            
+            bool      wait_confirm:1;
+#endif            
         };
 };
 

@@ -209,6 +209,7 @@ switch.leddown.output_type                   hwpwm
 switch.leddown.pwm_period_ms                 0.0625 # 16kHz
 
 switch.dragpin.enable                        true
+switch.dragpin.dragpin                       true #define as dragpin -> wait for pin up
 switch.dragpin.input_on_command              M816
 switch.dragpin.input_off_command             M817
 switch.dragpin.output_pin                    3.14

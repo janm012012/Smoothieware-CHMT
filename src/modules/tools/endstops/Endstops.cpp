@@ -30,6 +30,7 @@
 #include "BaseSolution.h"
 #include "SerialMessage.h"
 
+#include "mbed.h" // for us_ticker_read()
 #include <ctype.h>
 #include <algorithm>
 
@@ -1091,7 +1092,27 @@ void Endstops::on_gcode_received(void *argument)
                 for(auto& p : endstops) {
                     string str(1, p->axis);
                     if(p->limit_enable) str.append("L");
-                    gcode->stream->printf("(%s)P%d.%d:%d ", str.c_str(), p->pin.port_number, p->pin.pin, p->pin.get());
+                    if (p->pin.pin == 2 && p->pin.port_number == 4) // drag pin?
+                    {
+                        bool timeout;
+                        uint32_t delay_ms = 100; // After 100ms, we give up
+                        uint32_t start = us_ticker_read();
+                        int pin_state;
+                                                
+                        pin_state = p->pin.get();
+                        if (!pin_state)
+                        {
+                            do
+                            {
+                                THEKERNEL->call_event(ON_IDLE);
+                                timeout = (us_ticker_read() - start) > delay_ms * 1000;
+                                pin_state = p->pin.get();
+                            } while (!pin_state && !timeout);
+                        }
+                        gcode->stream->printf("(%s)P%d.%d:%d ", str.c_str(), p->pin.port_number, p->pin.pin, pin_state);
+                    }
+                    else
+                        gcode->stream->printf("(%s)P%d.%d:%d ", str.c_str(), p->pin.port_number, p->pin.pin, p->pin.get());
                 }
                 gcode->add_nl = true;
             }

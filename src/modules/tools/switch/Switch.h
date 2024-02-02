@@ -11,12 +11,8 @@
 #include "Pin.h"
 #include "Pwm.h"
 #include <math.h>
-
 #include <string>
 
-
-//#define WAIT_FOR_QUEUEU
-#define WAIT_FOR_DRAG_PIN_UP
 
 
 class Gcode;
@@ -48,7 +44,7 @@ class Switch : public Module {
         bool match_input_on_gcode(const Gcode* gcode) const;
         bool match_input_off_gcode(const Gcode* gcode) const;
         void pwm_write(float v);
-
+        void dragpin_try_release(void *argument);
         Pin       input_pin;
         float     switch_value;
         OUTPUT_TYPE output_type;
@@ -65,9 +61,7 @@ class Switch : public Module {
         uint16_t  input_off_command_code;
         char      input_on_command_letter;
         char      input_off_command_letter;
-#ifdef WAIT_FOR_DRAG_PIN_UP                    
-        Pin dragpin;
-#endif        
+        Pin       dragpin;
         struct {
             uint8_t   subcode:4;
             bool      switch_changed:1;
@@ -76,9 +70,7 @@ class Switch : public Module {
             bool      ignore_on_halt:1;
             uint8_t   failsafe:1;
             bool      inverting:1;
-#ifdef WAIT_FOR_DRAG_PIN_UP            
-            bool      wait_confirm:1;
-#endif            
+            bool      is_a_dragpin:1;
         };
 };
 

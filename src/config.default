@@ -38,9 +38,9 @@ microseconds_per_step_pulse                  1                # Duration of step
 base_stepping_frequency                      200000           # Base frequency for stepping, higher gives smoother movement
 
 # Cartesian axis speed limits
-x_axis_max_speed                             80000            # mm/min
-y_axis_max_speed                             80000            # mm/min
-z_axis_max_speed                             60000            # mm/min
+x_axis_max_speed                             130000           # mm/min - according to https://smoothieware.org/motion-control this is equivalent to alpha on cartesian maschines - keep high
+y_axis_max_speed                             100000           # mm/min
+z_axis_max_speed                             125000           # mm/min
 
 # Stepper module pins ( ports, and pin numbers, appending "!" to the number will invert a pin )
 # CHMT 5.3:LFeederStep 5.4:YStep 5.5:XStep 5.0:!XDir 5.1:!YDir 5.2:LFeederDir
@@ -50,14 +50,14 @@ z_axis_max_speed                             60000            # mm/min
 alpha_step_pin                               5.5              # Pin for alpha stepper step signal # TBD
 alpha_dir_pin                                5.0!             # Pin for alpha stepper direction
 alpha_en_pin                                 6.1!             # Pin for alpha enable pin # XYZ EN
-alpha_max_rate                               126000.0         # mm/min 132000 did stall (2200 in OpenPnP)
-alpha_acceleration                           23000.0          # 24500 did stall; 24000 does not usually stall
+alpha_max_rate                               130000.0         # mm/min 132000 did stall (2200 in OpenPnP)
+alpha_acceleration                           24000.0          # 24500 did stall; 24000 does not usually stall
 
 # Y axis
 beta_step_pin                                5.4              # Pin for beta stepper step signal
 beta_dir_pin                                 5.1!             # Pin for beta stepper direction
 beta_en_pin                                  nc               # Pin for beta enable # unused
-beta_max_rate                                90000.0          # mm/min 102000 is ok (1700 in OpenPnP) Y is acceleration limited, not speed limited
+beta_max_rate                                100000.0         # mm/min 102000 is ok (1700 in OpenPnP) Y is acceleration limited, not speed limited
 beta_acceleration                            7000.0           # 8250 did stall; 7875 does not usually stall
 
 # Z axis
@@ -95,35 +95,22 @@ zeta_step_pin                                5.3              # Pin for delta st
 zeta_dir_pin                                 5.2              # Pin for delta stepper direction
 zeta_en_pin                                  nc               # Pin for delta enable
 zeta_current                                 0.5              # Z stepper motor current
-zeta_max_rate                                100000           # mm/min
-zeta_acceleration                            10000            # mm/sec^2
+zeta_max_rate                                130000           # mm/min - set values as high as the X-axis limits as the peeler shall not limit the movement speed
+zeta_acceleration                            24000            # mm/sec^2
 zeta_enable                                  true
 
 # D axis: RPEELER
-#eta_steps_per_mm                             69.2642          # may be steps per degree for example
-#eta_step_pin                                 5.7              # Pin for delta stepper step signal
-#eta_dir_pin                                  5.6              # Pin for delta stepper direction
-#eta_en_pin                                   nc               # Pin for delta enable
-#eta_current                                  0.5              # Z stepper motor current
-#eta_max_rate                                 100000           # mm/min
-#eta_acceleration                             10000            # mm/sec^2
-#eta_enable                                   true
-
-extruder.f2.enable                           true             # Whether to activate the extruder module at all. All configuration is ignored if false
-extruder.f2.steps_per_mm                     69.2642          # Steps per mm for peeler stepper # 1/8 ms # linear distance of tape at 25mm min diameter
-extruder.f2.default_feed_rate                20000            # Default rate ( mm/minute ) for moves where only the extruder moves
-extruder.f2.acceleration                     1000             # Acceleration for the stepper motor, as of 0.6, arbitrary ratio
-extruder.f2.max_speed                        180              # mm/s
-extruder.f2.step_pin                         5.7              # Pin for extruder step signal # for some reason f2 has step connected to DIR
-extruder.f2.dir_pin                          5.6              # Pin for extruder dir signal # and not PLS on the CHMT controller
-extruder.f2.en_pin                           nc               # Pin for extruder enable signal # unused pin
-
-
+eta_steps_per_mm                             69.2642          # may be steps per degree for example
+eta_step_pin                                 5.7              # Pin for delta stepper step signal
+eta_dir_pin                                  5.6              # Pin for delta stepper direction
+eta_en_pin                                   nc               # Pin for delta enable
+eta_current                                  0.5              # Z stepper motor current
+eta_max_rate                                 130000           # mm/min - set values as high as the X-axis limits as the peeler shall not limit the movement speed
+eta_acceleration                             24000            # mm/sec^2
+eta_enable                                   true
 
 # Serial communications configuration ( baud rate default to 9600 if undefined )
 uart0.baud_rate                              115200           # Baud rate for the default hardware serial port
-second_usb_serial_enable                     true             # This enables a second usb serial port (to have both pronterface
-                                                              # and a terminal connected)
 msd_disable                                  true             # disable the MSD (USB SDCARD) when set to true (needs special binary)
 dfu_enable                                   false            # for linux developers, set to true to enable DFU
 

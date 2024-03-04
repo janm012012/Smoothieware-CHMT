@@ -61,7 +61,7 @@ endif
 # include an optional default set of excludes
 # add any modules that you do not want included in the build
 # e.g for a CNC machine
-export EXCLUDE_MODULES = tools/laser tools/drillingcycles tools/filamentdetector tools/rotarydeltacalibration tools/scaracal tools/spindle tools/zprobe utils/panel
+export EXCLUDE_MODULES = tools/laser tools/drillingcycles tools/filamentdetector tools/rotarydeltacalibration tools/scaracal tools/spindle tools/zprobe utils/panel tools/temperaturecontrol tools/temperatureswitch tools/extruder
 -include default_excludes.mk
 
 # override any default excludes by setting NODEFAULTEXCLUDES=1

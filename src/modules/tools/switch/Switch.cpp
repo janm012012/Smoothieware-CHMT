@@ -347,10 +347,6 @@ void Switch::dragpin_try_release( void *argument )
     THEKERNEL->call_event(ON_GCODE_RECEIVED, gc1); // -> relative mode
     delete gc1;
 
-    gc1 = new Gcode("M204 S1000", &StreamOutput::NullStream);
-    THEKERNEL->call_event(ON_GCODE_RECEIVED, gc1); // -> relative mode
-    delete gc1;
-
     do {
         rt = 0;
         while (timeout && rt < MAX_TRIES)

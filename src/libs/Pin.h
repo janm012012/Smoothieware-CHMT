@@ -19,6 +19,7 @@ class Pin {
         Pin();
 
         Pin* from_string(std::string value);
+        Pin* from_string_no_init(std::string value);
 
         inline bool connected(){
             return this->valid;

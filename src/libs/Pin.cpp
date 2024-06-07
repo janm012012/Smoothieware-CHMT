@@ -99,6 +99,66 @@ Pin* Pin::from_string(std::string value){
     return this;
 }
 
+
+Pin* Pin::from_string_no_init(std::string value){
+    if(value == "nc") {
+        this->valid= false;
+        return this; // optimize the nc case
+    }
+
+    // cs is the current position in the string
+    const char* cs = value.c_str();
+    // cn is the position of the next char after the number we just read
+    char* cn = NULL;
+    valid= true;
+
+    // grab first integer as port. pointer to first non-digit goes in cn
+    this->port_number = strtol(cs, &cn, 10);
+    // if cn > cs then strtol read at least one digit
+    if ((cn > cs) && (port_number < (sizeof(gpios)/sizeof(gpios[0])))){
+
+        // translate port index into something useful
+        this->port = gpios[(unsigned int) this->port_number];
+        // if the char after the first integer is a . then we should expect a pin index next
+        if (*cn == '.'){
+            // move pointer to first digit (hopefully) of pin index
+            cs = ++cn;
+
+            // grab pin index.
+            this->pin = strtol(cs, &cn, 10);
+
+            // if strtol read some numbers, cn will point to the first non-digit
+            if ((cn > cs) && (pin < 16)){
+                //this->port->FIOMASK &= ~(1 << this->pin); // stm32 doesn't have this feature
+
+                // now check for modifiers:-
+                // ! = invert pin
+                for (;*cn;cn++) {
+                    switch(*cn) {
+                        case '!':
+                            this->inverting = true;
+                            break;
+                        default:
+                            // skip any whitespace following the pin index
+                            if (!is_whitespace(*cn))
+                                return this;
+                    }
+                }
+                return this;
+            }
+        }
+    }
+
+    // from_string failed. TODO: some sort of error
+    valid= false;
+    port_number = 0;
+    port = gpios[0];
+    pin = 16;
+    inverting = false;
+    return this;
+}
+
+
 // Configure this pin as OD
 Pin* Pin::as_open_drain(){
     if (!this->valid) return this;

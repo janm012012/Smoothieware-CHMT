@@ -1,7 +1,9 @@
-### New features with this branch:
+### New features:
 * Drag pin inactivation are now handled smartly, by actually sensing if pin is up before sending acknowledge; this means that static delays are no longer needed in OpenPnP setup, and a  much more robust drag pin operation.
 * Anti Stiction Wiggle (ASW). If dragpin gets stuck, FW automatically tries to free it by quickly moving dragpin in a X/Y back/forth/left/righ pattern until it is free (or give up if it is not freed). At any time ASW has been engaged, the 'ok' back to OpenPnP has a comment attached to it, detailing what the ASW result was - e.g. "2023-12-13 11:22:54.328 GcodeDriver$ReaderThread TRACE: [GcodeDriver:ttyUSB0] << ok  ; ASW: l1,t4 (G1 X-0.1 Y-0.05)".
-  ASW is dependant on the smart drag pin activation code. Both can be enabled by adding a new property "switch.dragpin.dragpin true" to the group of switch.dragpin in the config.default. This property tells the generic code, that this pin is connected to a dragpin, and to activate the advanced mechanisms. Setting its value to false disables andy advanced logic.
+* Firmware management of drag pin PWM. The drag pin needs management of the power supplied to the solenoid. This fork lets the firwmware deal with it by itself, instead of having OpenPnP sending the different levels. In order to have the firmware dealing with it, just send a M816 without any argument. If an 'S' argument is supplied, this will set aside/override the firmware management. So be careful - if 'S' argument (e.g. 'S 100') is sent, the firmware will not manage the current, and OpenPNP _needs_ to send e.g. 'S 10' in order to not burn the coil.
+
+ASW is dependant on the smart drag pin activation code. Both can be enabled by adding a new property "switch.dragpin.dragpin true" to the group of switch.dragpin in the config.default. This property tells the generic code, that this pin is connected to a dragpin, and to activate the advanced mechanisms. Setting its value to false disables andy advanced logic.
 
 ##Notes
 This version contains a few modifications with respect to the original code by Matt

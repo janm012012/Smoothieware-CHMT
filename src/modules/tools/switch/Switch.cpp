@@ -47,6 +47,8 @@
 #define    failsafe_checksum            CHECKSUM("failsafe_set_to")
 #define    ignore_onhalt_checksum       CHECKSUM("ignore_on_halt")
 #define    dragpin_checksum             CHECKSUM("dragpin")
+#define    reduced_pwm_checksum         CHECKSUM("pwm_reduced_val")
+#define    max_pwm_ms_checksum          CHECKSUM("pwm_max_period_ms")
 
 Switch::Switch() {}
 
@@ -104,9 +106,13 @@ void Switch::on_config_reload(void *argument)
     std::string ipb = THEKERNEL->config->value(switch_checksum, this->name_checksum, input_pin_behavior_checksum )->by_default("momentary")->as_string();
     this->input_pin_behavior = (ipb == "momentary") ? momentary_checksum : toggle_checksum;
     this->is_a_dragpin= THEKERNEL->config->value(switch_checksum, this->name_checksum, dragpin_checksum )->by_default(false)->as_bool();
+    this->reduced_pwm_value = THEKERNEL->config->value(switch_checksum, this->name_checksum, reduced_pwm_checksum )->by_default(50)->as_number(); 
+    this->max_pwm_ms = THEKERNEL->config->value(switch_checksum, this->name_checksum, max_pwm_ms_checksum )->by_default(10)->as_number();     
+
     if (this->is_a_dragpin) 
     {
         this->dragpin.from_string_no_init( "4.2!" );
+        this->activation_start_time = 0;
     }
 
     if(type == "pwm"){
@@ -284,9 +290,20 @@ void Switch::on_gcode_received(void *argument)
                 else if(v < 0) v= 0;
                 this->pwm_write(v/100.0F);
                 this->switch_state= (v != 0);
+                if (this->is_a_dragpin)
+                    this->activation_start_time = 0;
             } else {
-                this->pwm_write(this->switch_value);
-                this->switch_state= (this->switch_value != 0);
+                if (this->is_a_dragpin)
+                {
+                    this->activation_start_time = us_ticker_read();
+                    this->pwm_write(1.0F);
+                }
+                else
+                {
+                    this->pwm_write(this->switch_value);
+                    this->switch_state= (this->switch_value != 0);
+                }
+
             }
 
         } else if (this->output_type == DIGITAL) {
@@ -313,6 +330,8 @@ void Switch::on_gcode_received(void *argument)
                 bool timeout;
                 uint32_t delay_ms = 100; // After 100ms, we give up
                 uint32_t start = us_ticker_read();
+                this->activation_start_time = 0;
+
                 do
                 {
                     THEKERNEL->call_event(ON_IDLE);
@@ -328,6 +347,9 @@ void Switch::on_gcode_received(void *argument)
         }
     }
 }
+
+
+
 
 #define    MAX_TRIES 6
 const char *release_try[MAX_TRIES] = { "G1 X-0.05", "G1 X0.1", "G1 X-0.05 Y-0.05", "G1 Y0.10", "G1 X-0.1 Y-0.05", "G1 X0.2"  };
@@ -457,6 +479,39 @@ void Switch::on_main_loop(void *argument)
         }
         this->switch_changed = false;
     }
+    
+
+    if (this->is_a_dragpin)
+    {
+        bool do_reduction = false;
+         
+        if (this->activation_start_time)
+        {
+            uint32_t now = us_ticker_read();
+            if (now > this->activation_start_time)
+            {
+                if (now > this->activation_start_time+ this->max_pwm_ms*1000)
+                {
+                    do_reduction = true;
+                }
+            }
+            else // handle us_ticker wrapping
+            {
+                if ( (0xffffffff-this->activation_start_time)+now > this->max_pwm_ms*1000)
+                {
+                    do_reduction = true;
+                }
+            }
+
+            if (do_reduction)
+            {
+                this->activation_start_time = 0;
+                this->pwm_write(this->reduced_pwm_value/100.0F);
+            }
+        }
+    }
+    
+    
 }
 
 // TODO Make this use InterruptIn

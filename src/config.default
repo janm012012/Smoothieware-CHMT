@@ -215,6 +215,8 @@ switch.dragpin.input_off_command             M817
 switch.dragpin.output_pin                    3.14
 switch.dragpin.output_type                   hwpwm
 switch.dragpin.pwm_period_ms                 0.0625 # 16kHz
+switch.dragpin.pwm_max_period_ms             20
+switch.dragpin.pwm_reduced_val               13
 
 switch.buzzer.enable                         true
 switch.buzzer.input_on_command               M820

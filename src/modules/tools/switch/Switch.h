@@ -62,6 +62,10 @@ class Switch : public Module {
         char      input_on_command_letter;
         char      input_off_command_letter;
         Pin       dragpin;
+        uint32_t  activation_start_time;
+        uint8_t   reduced_pwm_value;
+        uint8_t   max_pwm_ms;
+
         struct {
             uint8_t   subcode:4;
             bool      switch_changed:1;

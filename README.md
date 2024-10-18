@@ -1,9 +1,21 @@
-
-
 ### New features with this branch:
 * Drag pin inactivation are now handled smartly, by actually sensing if pin is up before sending acknowledge; this means that static delays are no longer needed in OpenPnP setup, and a  much more robust drag pin operation.
 * Anti Stiction Wiggle (ASW). If dragpin gets stuck, FW automatically tries to free it by quickly moving dragpin in a X/Y back/forth/left/righ pattern until it is free (or give up if it is not freed). At any time ASW has been engaged, the 'ok' back to OpenPnP has a comment attached to it, detailing what the ASW result was - e.g. "2023-12-13 11:22:54.328 GcodeDriver$ReaderThread TRACE: [GcodeDriver:ttyUSB0] << ok  ; ASW: l1,t4 (G1 X-0.1 Y-0.05)".
-ASW is dependant on the smart drag pin activation code. Both can be enabled by adding a new property "switch.dragpin.dragpin true" to the group of switch.dragpin in the config.default. This property tells the generic code, that this pin is connected to a dragpin, and to activate the advanced mechanisms. Setting its value to false disables andy advanced logic.
+  ASW is dependant on the smart drag pin activation code. Both can be enabled by adding a new property "switch.dragpin.dragpin true" to the group of switch.dragpin in the config.default. This property tells the generic code, that this pin is connected to a dragpin, and to activate the advanced mechanisms. Setting its value to false disables andy advanced logic.
+
+##Notes
+This version contains a few modifications with respect to the original code by Matt
+* c-riegel's mods to support advanced motion in OpenPnp
+* c-riegel's tweaked feed rate and acceleration limits
+* increased z limits to allow the z axis to move to its physical limits
+* vacuum and blower configuration changed to 16kHz pwm (M808/M810 S<percent>)
+* drap bin configuration changed to 16kHz pwm (M816 S<percent>)
+* buzzer configured (on: M820, off: M821)
+* default build changed to PAXIS=7
+* planner queue increased to 128
+* lighting for down-looking camera added (via OT2, 16kHz pwm, M822 S<percent>)
+
+Current build status: {{https://travis-ci.org/Smoothieware/Smoothieware.svg?branch=edge}}
 
 ## Old STM32/CHMT Notes from upstream
 To build, follow normal smoothie build process to get setup.  Then checkout chmt branch and rebuild.

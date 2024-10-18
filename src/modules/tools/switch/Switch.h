@@ -11,9 +11,8 @@
 #include "Pin.h"
 #include "Pwm.h"
 #include <math.h>
+
 #include <string>
-
-
 
 class Gcode;
 class StreamOutput;
@@ -45,6 +44,7 @@ class Switch : public Module {
         bool match_input_off_gcode(const Gcode* gcode) const;
         void pwm_write(float v);
         void dragpin_try_release(void *argument);
+
         Pin       input_pin;
         float     switch_value;
         OUTPUT_TYPE output_type;

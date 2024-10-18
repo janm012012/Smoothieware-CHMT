@@ -99,7 +99,6 @@ Pin* Pin::from_string(std::string value){
     return this;
 }
 
-
 Pin* Pin::from_string_no_init(std::string value){
     if(value == "nc") {
         this->valid= false;
@@ -157,7 +156,6 @@ Pin* Pin::from_string_no_init(std::string value){
     inverting = false;
     return this;
 }
-
 
 // Configure this pin as OD
 Pin* Pin::as_open_drain(){

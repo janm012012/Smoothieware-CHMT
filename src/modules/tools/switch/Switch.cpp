@@ -108,7 +108,6 @@ void Switch::on_config_reload(void *argument)
     {
         this->dragpin.from_string_no_init( "4.2!" );
     }
-                                                                
 
     if(type == "pwm"){
         this->output_type= SIGMADELTA;
@@ -141,6 +140,7 @@ void Switch::on_config_reload(void *argument)
             delete this->digital_pin;
             this->digital_pin= nullptr;
         }
+
     }else if(type == "hwpwm"){
         this->output_type= HWPWM;
         Pin *pin= new Pin();
@@ -262,15 +262,21 @@ void Switch::on_gcode_received(void *argument)
             if(gcode->has_letter('S')) {
                 int v = roundf(gcode->get_value('S') * sigmadelta_pin->max_pwm() / 255.0F); // scale by max_pwm so input of 255 and max_pwm of 128 would set value to 128
                 if(v != this->sigmadelta_pin->get_pwm()){ // optimize... ignore if already set to the same pwm
+                    // drain queue
+                    THEKERNEL->conveyor->wait_for_idle();
                     this->sigmadelta_pin->pwm(v);
                     this->switch_state= (v > 0);
                 }
             } else {
+                // drain queue
+                THEKERNEL->conveyor->wait_for_idle();
                 this->sigmadelta_pin->pwm(this->switch_value);
                 this->switch_state= (this->switch_value > 0);
             }
 
         } else if (this->output_type == HWPWM) {
+            // drain queue
+            THEKERNEL->conveyor->wait_for_idle();
             // PWM output pin set duty cycle 0 - 100
             if(gcode->has_letter('S')) {
                 float v = gcode->get_value('S');
@@ -282,14 +288,18 @@ void Switch::on_gcode_received(void *argument)
                 this->pwm_write(this->switch_value);
                 this->switch_state= (this->switch_value != 0);
             }
-            
+
         } else if (this->output_type == DIGITAL) {
+            // drain queue
+            THEKERNEL->conveyor->wait_for_idle();
             // logic pin turn on
             this->digital_pin->set(true);
             this->switch_state = true;
         }
 
     } else if(match_input_off_gcode(gcode)) {
+        // drain queue
+        THEKERNEL->conveyor->wait_for_idle();
         this->switch_state = false;
         if (this->output_type == SIGMADELTA) {
             // SIGMADELTA output pin
@@ -325,17 +335,13 @@ const char *release_try[MAX_TRIES] = { "G1 X-0.05", "G1 X0.1", "G1 X-0.05 Y-0.05
 void Switch::dragpin_try_release( void *argument )
 {
     bool timeout = true;
-    uint32_t delay_ms = 40; 
+    uint32_t delay_ms = 100; 
     uint32_t start;
     int rt,loops = 0;
     Gcode *gcode = static_cast<Gcode *>(argument);
     Gcode *gc1;
     
     gc1 = new Gcode("G91", &StreamOutput::NullStream);
-    THEKERNEL->call_event(ON_GCODE_RECEIVED, gc1); // -> relative mode
-    delete gc1;
-
-    gc1 = new Gcode("M204 S1000", &StreamOutput::NullStream);
     THEKERNEL->call_event(ON_GCODE_RECEIVED, gc1); // -> relative mode
     delete gc1;
 
@@ -370,11 +376,9 @@ void Switch::dragpin_try_release( void *argument )
         gcode->txt_after_ok.append(buf, n);
     }
     
-
     gc1 = new Gcode("G90", &StreamOutput::NullStream);
     THEKERNEL->call_event(ON_GCODE_RECEIVED, gc1); // Back to absolute mode!
     delete gc1;
-
 }
 
 void Switch::on_get_public_data(void *argument)

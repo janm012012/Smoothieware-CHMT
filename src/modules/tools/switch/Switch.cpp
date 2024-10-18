@@ -296,6 +296,8 @@ void Switch::on_gcode_received(void *argument)
                 if (this->is_a_dragpin)
                 {
                     this->activation_start_time = us_ticker_read();
+                    if (this->activation_start_time == 0)
+                        this->activation_start_time = 1;
                     this->pwm_write(1.0F);
                 }
                 else
@@ -303,7 +305,6 @@ void Switch::on_gcode_received(void *argument)
                     this->pwm_write(this->switch_value);
                     this->switch_state= (this->switch_value != 0);
                 }
-
             }
 
         } else if (this->output_type == DIGITAL) {
@@ -347,9 +348,6 @@ void Switch::on_gcode_received(void *argument)
         }
     }
 }
-
-
-
 
 #define    MAX_TRIES 6
 const char *release_try[MAX_TRIES] = { "G1 X-0.05", "G1 X0.1", "G1 X-0.05 Y-0.05", "G1 Y0.10", "G1 X-0.1 Y-0.05", "G1 X0.2"  };
@@ -479,29 +477,13 @@ void Switch::on_main_loop(void *argument)
         }
         this->switch_changed = false;
     }
-    
 
     if (this->is_a_dragpin)
     {
-        bool do_reduction = false;
-         
+        // if set, the power to the drag pin shall be reduced after timeout
         if (this->activation_start_time)
         {
-            uint32_t now = us_ticker_read();
-            if (now > this->activation_start_time)
-            {
-                if (now > this->activation_start_time+ this->max_pwm_ms*1000)
-                {
-                    do_reduction = true;
-                }
-            }
-            else // handle us_ticker wrapping
-            {
-                if ( (0xffffffff-this->activation_start_time)+now > this->max_pwm_ms*1000)
-                {
-                    do_reduction = true;
-                }
-            }
+			bool do_recuction = (us_ticker_read() - this->activation_start_time) > this->max_pwm_ms*1000;
 
             if (do_reduction)
             {
@@ -510,8 +492,6 @@ void Switch::on_main_loop(void *argument)
             }
         }
     }
-    
-    
 }
 
 // TODO Make this use InterruptIn

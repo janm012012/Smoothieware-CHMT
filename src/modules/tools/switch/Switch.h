@@ -65,7 +65,6 @@ class Switch : public Module {
         uint32_t  activation_start_time;
         uint8_t   reduced_pwm_value;
         uint8_t   max_pwm_ms;
-
         struct {
             uint8_t   subcode:4;
             bool      switch_changed:1;

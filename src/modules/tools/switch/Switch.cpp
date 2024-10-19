@@ -350,7 +350,7 @@ void Switch::on_gcode_received(void *argument)
 }
 
 #define    MAX_TRIES 6
-const char *release_try[MAX_TRIES] = { "G1 X-0.05", "G1 X0.1", "G1 X-0.05 Y-0.05", "G1 Y0.10", "G1 X-0.1 Y-0.05", "G1 X0.2"  };
+static const char *release_try[MAX_TRIES] = { "G1 X-0.05", "G1 X0.1", "G1 X-0.05 Y-0.05", "G1 Y0.10", "G1 X-0.1 Y-0.05", "G1 X0.2"  };
 
 void Switch::dragpin_try_release( void *argument )
 {
@@ -386,13 +386,13 @@ void Switch::dragpin_try_release( void *argument )
     if (!timeout)
     {
         char buf[40];
-        int n = snprintf(buf, sizeof(buf), " ; ASW: l%d,t%d (%s)",loops, rt,release_try[rt]);
+        int n = snprintf(buf, sizeof(buf), " ; ASW: l%d,t%d (%s)", loops, rt, release_try[rt]);
         gcode->txt_after_ok.append(buf, n);
     }
     else
     {
         char buf[24];
-        int n = snprintf(buf, sizeof(buf), " ; ASW: Fail l%d,t%d",loops, rt);
+        int n = snprintf(buf, sizeof(buf), " ; ASW: Fail l%d,t%d", loops, rt);
         gcode->txt_after_ok.append(buf, n);
     }
     
@@ -483,7 +483,7 @@ void Switch::on_main_loop(void *argument)
         // if set, the power to the drag pin shall be reduced after timeout
         if (this->activation_start_time)
         {
-			bool do_recuction = (us_ticker_read() - this->activation_start_time) > this->max_pwm_ms*1000;
+			bool do_reduction = (us_ticker_read() - this->activation_start_time) > this->max_pwm_ms*1000;
 
             if (do_reduction)
             {

@@ -291,6 +291,7 @@ void Switch::on_gcode_received(void *argument)
                 if (this->is_a_dragpin)
                 {
                     this->activation_start_time = us_ticker_read();
+                    if( !this->activation_start_time ) this->activation_start_time = 1;
                     this->pwm_write(1.0F);
                 }
                 else

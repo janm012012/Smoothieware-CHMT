@@ -99,6 +99,8 @@ Pin* Pin::from_string(std::string value){
     return this;
 }
 
+// this function is needed to initialize the drag-pin-up sensor twice, first as gamma_max_endstop for readback
+// and second for the drag pin code to wait until the pin is actually up
 Pin* Pin::from_string_no_init(std::string value){
     if(value == "nc") {
         this->valid= false;

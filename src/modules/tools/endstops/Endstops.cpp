@@ -1092,27 +1092,28 @@ void Endstops::on_gcode_received(void *argument)
                 for(auto& p : endstops) {
                     string str(1, p->axis);
                     if(p->limit_enable) str.append("L");
-                    if (p->pin.pin == 2 && p->pin.port_number == 4) // drag pin?
-                    {
+
+                    // the drag pin is bouncing when commanded to go up. The interlock code in OpenPnP
+                    // can be configured to confirm it's up before the next move. To avoid false assertions
+                    // allow the pin some time to signal up before returning.
+                    // !! here the drag-pin-up sensor is hardcoded
+                    if (p->pin.pin == 2 && p->pin.port_number == 4) {
                         bool timeout;
                         uint32_t delay_ms = 100; // After 100ms, we give up
                         uint32_t start = us_ticker_read();
                         int pin_state;
-                                                
+                        
                         pin_state = p->pin.get();
-                        if (!pin_state)
-                        {
-                            do
-                            {
+                        if (!pin_state) {
+                            do {
                                 THEKERNEL->call_event(ON_IDLE);
                                 timeout = (us_ticker_read() - start) > delay_ms * 1000;
                                 pin_state = p->pin.get();
                             } while (!pin_state && !timeout);
                         }
-                        gcode->stream->printf("(%s)P%d.%d:%d ", str.c_str(), p->pin.port_number, p->pin.pin, pin_state);
                     }
-                    else
-                        gcode->stream->printf("(%s)P%d.%d:%d ", str.c_str(), p->pin.port_number, p->pin.pin, p->pin.get());
+
+                    gcode->stream->printf("(%s)P%d.%d:%d ", str.c_str(), p->pin.port_number, p->pin.pin, p->pin.get());
                 }
                 gcode->add_nl = true;
             }

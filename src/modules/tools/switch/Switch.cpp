@@ -22,6 +22,7 @@
 #include "StreamOutput.h"
 #include "StreamOutputPool.h"
 
+#include "mbed.h" // for us_ticker_read()
 #include "PwmOut.h"
 
 #include "MRI_Hooks.h"
@@ -45,6 +46,9 @@
 #define    pwm_period_ms_checksum       CHECKSUM("pwm_period_ms")
 #define    failsafe_checksum            CHECKSUM("failsafe_set_to")
 #define    ignore_onhalt_checksum       CHECKSUM("ignore_on_halt")
+#define    dragpin_checksum             CHECKSUM("dragpin")
+#define    reduced_pwm_checksum         CHECKSUM("pwm_reduced_val")
+#define    max_pwm_ms_checksum          CHECKSUM("pwm_max_period_ms")
 
 Switch::Switch() {}
 
@@ -101,6 +105,15 @@ void Switch::on_config_reload(void *argument)
 
     std::string ipb = THEKERNEL->config->value(switch_checksum, this->name_checksum, input_pin_behavior_checksum )->by_default("momentary")->as_string();
     this->input_pin_behavior = (ipb == "momentary") ? momentary_checksum : toggle_checksum;
+    this->is_a_dragpin= THEKERNEL->config->value(switch_checksum, this->name_checksum, dragpin_checksum )->by_default(false)->as_bool();
+    this->reduced_pwm_value = THEKERNEL->config->value(switch_checksum, this->name_checksum, reduced_pwm_checksum )->by_default(50)->as_number(); 
+    this->max_pwm_ms = THEKERNEL->config->value(switch_checksum, this->name_checksum, max_pwm_ms_checksum )->by_default(10)->as_number();     
+
+    // if this pin is a drag pin, initialize the (hardcoded) drag-pin-up sensor
+    if (this->is_a_dragpin){
+        this->dragpin.from_string_no_init( "4.2!" );
+        this->activation_start_time = 0;
+    }
 
     if(type == "pwm"){
         this->output_type= SIGMADELTA;
@@ -277,9 +290,20 @@ void Switch::on_gcode_received(void *argument)
                 else if(v < 0) v= 0;
                 this->pwm_write(v/100.0F);
                 this->switch_state= (v != 0);
+                if (this->is_a_dragpin)
+                    this->activation_start_time = 0;
             } else {
-                this->pwm_write(this->switch_value);
-                this->switch_state= (this->switch_value != 0);
+                // if this is a drag pin, enable it at 100% and start the timeout to reduce power as configured
+                if (this->is_a_dragpin && this->max_pwm_ms > 0) {
+                    this->activation_start_time = us_ticker_read();
+                    if (this->activation_start_time == 0)
+                        this->activation_start_time = 1;
+                    this->pwm_write(1.0F);
+
+                } else {
+                    this->pwm_write(this->switch_value);
+                    this->switch_state= (this->switch_value != 0);
+                }
             }
 
         } else if (this->output_type == DIGITAL) {
@@ -301,11 +325,76 @@ void Switch::on_gcode_received(void *argument)
         } else if (this->output_type == HWPWM) {
             this->pwm_write(0);
 
+            if (this->is_a_dragpin) {
+                // this is a drag pin: first, wait a little for the pin to go up. The sensor has hardcoded to 4.2
+                bool timeout;
+                uint32_t delay_ms = 100; // After 100ms, we give up
+                uint32_t start = us_ticker_read();
+                this->activation_start_time = 0;    // stop any pending automatic-power-down timer
+
+                do {
+                    THEKERNEL->call_event(ON_IDLE);
+                    timeout = (us_ticker_read() - start) > delay_ms * 1000;
+                } while (!this->dragpin.get() && !timeout);
+
+                // if the drag pin is not up, execute a wiggle sequence to try to release it
+                if (timeout)  
+                    dragpin_try_release(gcode);
+            }
         } else if (this->output_type == DIGITAL) {
             // logic pin turn off
             this->digital_pin->set(false);
         }
     }
+}
+
+#define    MAX_TRIES 6
+static const char *release_try[MAX_TRIES] = { "G1 X-0.05", "G1 X0.1", "G1 X-0.05 Y-0.05", "G1 Y0.10", "G1 X-0.1 Y-0.05", "G1 X0.2"  };
+
+// execute a sequence of small moves to try to release the drag pin if it did not go up by itself
+void Switch::dragpin_try_release( void *argument )
+{
+    bool timeout = true;
+    uint32_t delay_ms = 100; 
+    uint32_t start;
+    int rt,loops = 0;
+    Gcode *gcode = static_cast<Gcode *>(argument);
+    Gcode *gc1;
+    
+    gc1 = new Gcode("G91", &StreamOutput::NullStream);
+    THEKERNEL->call_event(ON_GCODE_RECEIVED, gc1); // -> relative mode
+    delete gc1;
+
+    do {
+        rt = 0;
+        while (timeout && rt < MAX_TRIES) {
+            gc1 = new Gcode(release_try[rt++], &StreamOutput::NullStream);
+            THEKERNEL->call_event(ON_GCODE_RECEIVED, gc1); // -> relative mode
+            THEKERNEL->conveyor->wait_for_idle();
+            delete gc1;
+            start = us_ticker_read();
+            do {
+                THEKERNEL->call_event(ON_IDLE);
+                timeout = (us_ticker_read() - start) > delay_ms * 1000;
+            } while (!this->dragpin.get() && !timeout);
+        }
+    } while (timeout && ++loops < 3 );
+
+    rt--;
+    if (!timeout) {
+        char buf[40];
+        int n = snprintf(buf, sizeof(buf), " ; ASW: l%d,t%d (%s)", loops, rt, release_try[rt]);
+        gcode->txt_after_ok.append(buf, n);
+
+    } else {
+        char buf[24];
+        int n = snprintf(buf, sizeof(buf), " ; ASW: Fail l%d,t%d", loops, rt);
+        gcode->txt_after_ok.append(buf, n);
+    }
+    
+    gc1 = new Gcode("G90", &StreamOutput::NullStream);
+    THEKERNEL->call_event(ON_GCODE_RECEIVED, gc1); // Back to absolute mode!
+    delete gc1;
 }
 
 void Switch::on_get_public_data(void *argument)
@@ -383,6 +472,18 @@ void Switch::on_main_loop(void *argument)
             }
         }
         this->switch_changed = false;
+    }
+
+    if (this->is_a_dragpin) {
+        // if set, the power to the drag pin shall be reduced after timeout
+        if (this->activation_start_time) {
+			bool do_reduction = (us_ticker_read() - this->activation_start_time) > this->max_pwm_ms*1000;
+
+            if (do_reduction) {
+                this->activation_start_time = 0;
+                this->pwm_write(this->reduced_pwm_value/100.0F);
+            }
+        }
     }
 }
 

@@ -384,7 +384,17 @@ void Switch::dragpin_try_release(Gcode* gcode)
         char buf[24];
         int n = snprintf(buf, sizeof(buf), "; ASW: Fail l%d,t%d", loops, rt);
         gcode->txt_after_ok.append(buf, n);
-        gcode->is_error = true;	// put the machine into HALT state
+        // the machine can be put into HALT state here, but that might not 
+        // always be a good idea: if in HALT state, OpenPnP needs a
+        // COMMAND_ERROR_REGEX to detect the state and eventually enhancements
+        // to signal that the controller is in error state. In addition, all
+        // part on all nozzles will get dropped immediately and it's not that
+        // easy to leave the error state. (M999 can be placed in the
+        // CONNECT_COMMAND to leave the error state.)
+        // (by today (2/20/2026) with COMMAND_ERROR_REGEX set to "^.*(error|!!).*"
+        // and OpenPnP 2.7 I could not clearly identify the state.)
+        // -> do not go into HALT/error state
+        //gcode->is_error = true;	// put the machine into HALT state
     }
     
     gc1 = new Gcode("G90", &StreamOutput::NullStream);
